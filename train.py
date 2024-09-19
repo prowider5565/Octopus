@@ -21,18 +21,18 @@ index = faiss.IndexFlatL2(512)  # L2 distance, assuming embedding size is 512
 for image in images:
     reference_img = cv2.imread(os.path.join(assets_path, image))
     reference_img = cv2.cvtColor(reference_img, cv2.COLOR_BGR2RGB)
-    
+
     # Get face embeddings from the model
     faces = model.get(reference_img)
-    
+
     if faces:  # If any face is detected
-        embedding = faces[0].embedding  # Take the first face's embedding
-        index.add(np.array([embedding]).astype("float32"))  # Add the embedding to FAISS index
+        embedding = faces[0].embedding
+        index.add(np.array([embedding]).astype("float32"))
     else:
         print(f"No face detected in {image}")
 
 # Save the model to Redis
-pickled_data = pickle.dumps(model)
-connection.set("face_encoding", pickled_data)
-
-print(connection.get("face_encoding"))
+pickled_model = pickle.dumps(model)
+pickled_index = pickle.dumps(index)
+connection.set("face_encoding", pickled_model)
+connection.set("index", pickled_index)

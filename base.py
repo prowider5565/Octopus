@@ -8,14 +8,16 @@ import time
 import uuid
 import cv2
 import os
+import time
 
 from redis_connection import connection
 
 
 # Load FaceAnalysis model from Redis
-redis_data = connection.get("face_encoding")
-model = pickle.loads(redis_data)
-
+face_encoding = connection.get("face_encoding")
+redis_index = connection.get("index")
+model = pickle.loads(face_encoding)
+index = pickle.loads(redis_index)
 
 
 # Start video stream
@@ -34,15 +36,10 @@ while True:
 
     for face in faces:
         embedding = face.embedding
-        D, I = index.search(
-            np.array([embedding]).astype("float32"), 1
-        )  # Search closest match
-
+        D, I = index.search(np.array([embedding]).astype("float32"), 1)
         print(D[0][0])
         # Threshold to determine a match (lower value means more similar)
-        if D[0][0] < 450:  # Adjust the threshold as per your requirement
-            print("______________________________________________________________________")
-
+        if D[0][0] < 500:  # Adjust the threshold as per your requirement
             # Get bounding box coordinates
             bbox = face.bbox.astype(int)  # bbox contains [x1, y1, x2, y2]
 
