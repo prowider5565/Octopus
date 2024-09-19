@@ -1,0 +1,7 @@
+insightface
+opencv-python
+videostream
+faiss-cpu
+imutils
+onnxruntime
+redis

@@ -1,0 +1,28 @@
+add sh file like:
+
+#!/bin/bash
+
+# Set up the display
+export DISPLAY=:0.0
+xhost +local:
+
+# Call your Python script (update with your script's path)
+python3 /path/to/susentry.py -l 
+
+# Check the exit status of the Python script
+exit_status=$?
+if [ "${exit_status}" -ne 0 ]; then
+    echo "Facial recognition failed. Exit code: ${exit_status}"
+    exit 1
+fi
+
+# If facial recognition passes, allow sudo
+echo "Facial recognition succeeded."
+exit 0
+
+
+
+add it to location: /usr/local/bin/init.sh
+
+grant permissions: sudo chmod +x /usr/local/bin/susentry
+
