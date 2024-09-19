@@ -8,31 +8,28 @@ import os
 
 from redis_connection import connection
 
-# Initialize the face recognition model from InsightFace
-model = insightface.app.FaceAnalysis(name="buffalo_l")
-model.prepare(ctx_id=-1)  # Use CPU (-1), or set GPU id
 
+model = insightface.app.FaceAnalysis(name="buffalo_l")
+model.prepare(ctx_id=-1)
 assets_path = os.path.join("assets")
 images = os.listdir(assets_path)
-
-# Initialize FAISS index with the dimension of face embeddings
-index = faiss.IndexFlatL2(512)  # L2 distance, assuming embedding size is 512
+index = faiss.IndexFlatL2(512)
+reference_names = []
 
 for image in images:
     reference_img = cv2.imread(os.path.join(assets_path, image))
     reference_img = cv2.cvtColor(reference_img, cv2.COLOR_BGR2RGB)
-
-    # Get face embeddings from the model
     faces = model.get(reference_img)
-
-    if faces:  # If any face is detected
+    if faces:
         embedding = faces[0].embedding
         index.add(np.array([embedding]).astype("float32"))
+        reference_names.append(str(image).split(".")[0])
     else:
         print(f"No face detected in {image}")
 
-# Save the model to Redis
 pickled_model = pickle.dumps(model)
 pickled_index = pickle.dumps(index)
+pickled_names = pickle.dumps(reference_names)
 connection.set("face_encoding", pickled_model)
 connection.set("index", pickled_index)
+connection.set("reference_names", pickled_names)

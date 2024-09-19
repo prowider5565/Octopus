@@ -9,11 +9,13 @@ import threading
 
 from redis_connection import connection
 
-# Load FaceAnalysis model from Redis
+
 face_encoding = connection.get("face_encoding")
 redis_index = connection.get("index")
 model = pickle.loads(face_encoding)
 index = pickle.loads(redis_index)
+reference_names = connection.get("reference_names")
+reference_names = pickle.loads(reference_names)
 
 print("[INFO] starting video stream...")
 vs = VideoStream(src=0).start()
@@ -36,11 +38,7 @@ detection_thread = None
 while True:
     frame = vs.read()
     rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-    
-    # Show the current frame
-    cv2.imshow("Frame", frame)
-    
-    # Start the face detection in a separate thread
+    cv2.imshow("Original Frame", frame)
     if detection_thread is None or not detection_thread.is_alive():
         detection_thread = threading.Thread(
             target=detect_faces, args=(rgb_frame, frame.copy())
@@ -51,10 +49,9 @@ while True:
         for face in faces:
             embedding = face.embedding
             D, I = index.search(np.array([embedding]).astype("float32"), 1)
-            print(D[0][0])
+
             if D[0][0] < 600:
                 bbox = face.bbox.astype(int)
-                # Draw a rectangle on the frame around the detected face
                 cv2.rectangle(
                     processed_frame,
                     (bbox[0], bbox[1]),
@@ -62,20 +59,19 @@ while True:
                     (0, 255, 0),
                     2,
                 )
-                # Update the screen with the processed frame (with rectangles)
-                cv2.imshow("Frame", processed_frame)
-                
-                # Save the screenshot
-                screenshot_path = os.path.join("results", str(uuid.uuid4()) + ".jpg")
-                cv2.imwrite(screenshot_path, processed_frame)
-                print(f"[INFO] Screenshot saved to {screenshot_path}")
-                
-                # vs.stop()
-                cv2.imshow("Frame", processed_frame)
-                # cv2.destroyAllWindows()
-                # exit(0)
+                image_name = reference_names[I[0][0]]
+                cv2.putText(
+                    processed_frame,
+                    image_name,
+                    (bbox[2] - 100, bbox[1] - 10),
+                    cv2.FONT_HERSHEY_SIMPLEX,
+                    0.6,
+                    (0, 255, 0),
+                    2,
+                    cv2.LINE_AA,
+                )
+        cv2.imshow("Processed Frame", processed_frame)
 
-    # Press 'q' to exit
     if cv2.waitKey(1) & 0xFF == ord("q"):
         break
 
