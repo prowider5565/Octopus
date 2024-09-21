@@ -18,7 +18,7 @@ reference_names = pickle.loads(reference_names)
 
 print("[INFO] starting video stream...")
 vs = VideoStream(src=0).start()
-
+    
 if not os.path.exists("results"):
     os.mkdir("results")
 
