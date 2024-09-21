@@ -8,7 +8,6 @@ import threading
 
 from redis_connection import connection
 
-# Load data from Redis
 face_encoding = connection.get("face_encoding")
 redis_index = connection.get("index")
 model = pickle.loads(face_encoding)
@@ -18,7 +17,7 @@ reference_names = pickle.loads(reference_names)
 
 print("[INFO] starting video stream...")
 vs = VideoStream(src=0).start()
-    
+
 if not os.path.exists("results"):
     os.mkdir("results")
 
@@ -26,7 +25,7 @@ faces = []
 processed_frame = None
 lock = threading.Lock()
 
-# Face processing function (threaded)
+
 def process_face(face, processed_frame):
     embedding = face.embedding
     D, I = index.search(np.array([embedding]).astype("float32"), 1)
@@ -52,29 +51,21 @@ def process_face(face, processed_frame):
             cv2.LINE_AA,
         )
 
-# Face detection function (threaded)
+
 def detect_faces(rgb_frame, orig_frame):
     global faces
     faces = model.get(rgb_frame)
     for face in faces:
         process_face(face, orig_frame)
 
-# Main loop
+
 while True:
     frame = vs.read()
     rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-    
-    # Thread for face detection and processing
-    detection_thread = threading.Thread(
-        target=detect_faces, args=(rgb_frame, frame)
-    )
+    detection_thread = threading.Thread(target=detect_faces, args=(rgb_frame, frame))
     detection_thread.start()
-    detection_thread.join()  # Wait for face processing to complete
-
-    # Display the frame (ensure this happens on the main thread)
+    detection_thread.join()
     cv2.imshow("Processed Frame", frame)
-
-    # Break the loop if 'q' is pressed
     if cv2.waitKey(1) & 0xFF == ord("q"):
         break
 
